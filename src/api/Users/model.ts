@@ -19,7 +19,7 @@ const UserModel= sequelize.define<UserInstance,UserAttributes>("user",{
     },
     surname:{
         type: DataTypes.STRING(50),
-        allowNull:false
+        allowNull:true
     },
     email: {
         
@@ -45,6 +45,7 @@ const UserModel= sequelize.define<UserInstance,UserAttributes>("user",{
      },
     avatar:{
         type:DataTypes.STRING(255),
+        defaultValue:"https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_960_720.png",
         allowNull: true
     },
     businessSchedule: {
