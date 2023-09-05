@@ -3,6 +3,7 @@ import createHttpError from "http-errors";
 import UserModel from "./model";
 import { createAccessToken, createRefreshToken } from "../../lib/auth/tools";
 import { JWTTokenAuth, UserRequest } from "../../lib/auth/jwt";
+import { avatarUploader } from "../../lib/cloudinary";
 
 
 const UserRouter=Express.Router()
@@ -54,6 +55,23 @@ UserRouter.post("/login", async (req, res, next) => {
       next(err);
     }
   });
+
+
+UserRouter.post("/avatar",avatarUploader,JWTTokenAuth, async (req, res, next) => {
+  try {
+    const userId = (req as UserRequest).user!._id;
+    const newAvatarPath = req.file?.path;
+
+    await UserModel.update({ avatar: newAvatarPath }, { where: { UserId: userId } });
+    res.send({ avatarURL: newAvatarPath });
+    console.log("UserId",userId)
+   
+
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
+})  
 
 
 UserRouter.get("/",async(req,res,next)=>{
