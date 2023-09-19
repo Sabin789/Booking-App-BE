@@ -4,6 +4,7 @@ import UserModel from "./model";
 import { createAccessToken, createRefreshToken } from "../../lib/auth/tools";
 import { JWTTokenAuth, UserRequest } from "../../lib/auth/jwt";
 import { avatarUploader } from "../../lib/cloudinary";
+import sequelize, { Op } from "sequelize";
 
 
 const UserRouter=Express.Router()
@@ -165,5 +166,20 @@ UserRouter.delete("/me/session",JWTTokenAuth,async(req,res,next)=>{
     }
 })
 
+
+UserRouter.get("/search/:q",JWTTokenAuth,async(req,res,next)=>{
+  try {
+    const searchQuery = req.params.q;
+    const businesses= await UserModel.findAll({where:{
+      role:"Business",
+      name: {
+        [sequelize.Op.like]: `%${searchQuery}%` 
+      }
+    }})
+    res.status(200).send(businesses)
+  } catch (error) {
+    next(error)
+  }
+})
 
 export default UserRouter

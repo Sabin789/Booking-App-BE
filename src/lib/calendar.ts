@@ -1,47 +1,31 @@
-
-import BookingModel from "../api/Bookings/model"
-import UserModel from "../api/Users/model"
-import moment from 'moment'
-import sequelize, { Op } from "sequelize";
-
-export async function isBusinessAvailableOnDay(businessId:string,dayOfWeek:string):Promise<boolean>{
-    try {
-        const business=await UserModel.findByPk(businessId)
-        if(business?.businessSchedule?.[dayOfWeek]?.openingTime!=="none"){
-             return false
-        }else{
-            return true
-        }
-    } catch (error) {
-        console.log(error)
-        return false
-    }
+export function convertTimeToFormattedString(time:any) {
+    const timeParts = time.split(":");
+    const hours = parseInt(timeParts[0]);
+    const minutes = parseInt(timeParts[1].split(" ")[0]);
+    const ampm = timeParts[1].split(" ")[1];
+    const timeDate = new Date();
+    timeDate.setUTCHours(ampm === "AM" ? hours : hours + 12);
+    timeDate.setUTCMinutes(minutes);
+    const hour = timeDate.getUTCHours().toString().padStart(2, '0');
+    const minute = timeDate.getUTCMinutes().toString().padStart(2, '0');
+    return `${hour}:${minute}`;
 }
 
-export async function hasNoOverlappingBookings(businessId: string, dayOfWeek: string, startTime: string, endTime: string, serviceIds: string[]): Promise<boolean> {
-
-    try {
-        const business=await UserModel.findByPk(businessId)
-        const openingTime=business?.businessSchedule[dayOfWeek]?.openingTime as string
-        const closingTime=business?.businessSchedule[dayOfWeek]?.closingTime as string
-        if (startTime < openingTime || endTime > closingTime) {
-            return false;
-        }
-        const overlappingBookings=await BookingModel.findAll({
-            where:{BusinessId: businessId},
-            date: moment().isoWeekday(dayOfWeek).format('YYYY-MM-DD'),
-            [sequelize.Op.or]: [
-                { startTime: { [sequelize.Op.between]: [startTime, endTime] } },
-                { endTime: { [sequelize.Op.between]: [startTime, endTime] } },
-            ]
-        }as any)
-        if (overlappingBookings.length > 0) {
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        console.log(error)
-        return false
-    }
-}
+export function convertRequestBodyToBookingTime(time:any) {
+    const requestedDate = new Date(time);
+    const startTimeComponents = time.split(":");
+  
+    const requestedTime = new Date(Date.UTC(
+      requestedDate.getFullYear(),
+      requestedDate.getMonth(),
+      requestedDate.getDate(),
+      Number(startTimeComponents[0]),
+      Number(startTimeComponents[1])
+    ));
+  
+    const bookingTimeHour = requestedTime.getUTCHours().toString().padStart(2, '0');
+    const bookingTimeMinutes = requestedTime.getUTCMinutes().toString().padStart(2, '0');
+    const bookingTime = `${bookingTimeHour}:${bookingTimeMinutes}`;
+  
+    return bookingTime;
+  }

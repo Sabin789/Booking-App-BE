@@ -6,6 +6,7 @@ import BookingModel from "./model";
 import sequelize, { Op } from "sequelize";
 import ServiceModel from "../Services/model";
 import moment from "moment";
+import { convertTimeToFormattedString } from "../../lib/calendar";
 
 
 const BookingRouter=Express.Router()
@@ -49,10 +50,7 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
         const openingTime = business?.businessSchedule[dayOfWeek]?.openingTime as string;
         const closingTime = business?.businessSchedule[dayOfWeek]?.closingTime as string;
         const serviceIds = req.body.ServiceIds
-        const f= new Intl.DateTimeFormat("en-us",{
-
-            timeStyle:"short"
-        })
+        
         if (openingTime === "none") {
             return res.status(403).send(createHttpError(403, "Business is not available on that day!!!"));
         }else{
@@ -82,31 +80,10 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
         
 
         req.body.BusinessId = user.UserId;
-        const openingTimeParts = openingTime.split(":");
-        const openingHours = parseInt(openingTimeParts[0]);
-        const openingMinutes = parseInt(openingTimeParts[1].split(" ")[0]);
-        const openingAMPM = openingTimeParts[1].split(" ")[1];
-        const openingTimeDate = new Date();
-        openingTimeDate.setUTCHours(openingAMPM === "AM" ? openingHours : openingHours + 12);
-        openingTimeDate.setUTCMinutes(openingMinutes);
-        
-        const openingTimeHour=openingTimeDate.getUTCHours().toString().padStart(2, '0');
-        const openingTimeMinutes=openingTimeDate.getUTCMinutes().toString().padStart(2, '0');
-        const openingTimeOnly=`${openingTimeHour}:${openingTimeMinutes}`
+    
+        const openingTimeOnly=convertTimeToFormattedString(openingTime)
+        const closingTimeOnly=convertTimeToFormattedString(closingTime)
 
-
-        const closingTimeParts = closingTime.split(":");
-        const closingHours = parseInt(closingTimeParts[0]);
-        const closingMinutes = parseInt(closingTimeParts[1].split(" ")[0]);
-        const closingAMPM = closingTimeParts[1].split(" ")[1];
-        const closingTimeDate = new Date();
-        closingTimeDate.setUTCHours(closingAMPM === "AM" ? closingHours : closingHours + 12);
-        closingTimeDate.setUTCMinutes(closingMinutes);
-        const closingTimeHour=closingTimeDate.getUTCHours().toString().padStart(2, '0');
-        const closingTimeMinutes=closingTimeDate.getUTCMinutes().toString().padStart(2, '0');
-        const closingTimeOnly=`${closingTimeHour}:${closingTimeMinutes}`
-        
-                
         if (  bookingTimeOnly >= openingTimeOnly && endBookingTimeOnly <= closingTimeOnly) {
             const overlappingBookings = await BookingModel.findAll({
                 where: {
@@ -119,7 +96,7 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
                         },
                         // Check if an existing booking starts during the new booking
                         {
-                            StartTime: { [sequelize.Op.gte]: bookingTimeOnly }, // Existing booking starts during or after new booking
+                            StartTime: { [sequelize.Op.gte]: bookingTimeOnly }, 
                             EndTime: { [sequelize.Op.lt]: endBookingTimeOnly } 
                         },
                     ]
@@ -152,6 +129,11 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
 
     }
 });
+
+
+
+
+
 
 BookingRouter.delete("/:id",JWTTokenAuth,async(req,res,next)=>{
     try {
