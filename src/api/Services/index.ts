@@ -25,9 +25,8 @@ ServiceRouter.post("/",JWTTokenAuth,async(req,res,next)=>{
         if(!user){
             next(createHttpError(404, "No user found!!!"));
         }else{
-           
               if(exists){
-                next(createHttpError(409, "You are already advertising that service!!!"));
+                res.status(409).send("You are already advertising that service!!!");
               }else{
                 req.body.BusinessId = user.UserId
                 const {ServiceId}= await ServiceModel.create(req.body)

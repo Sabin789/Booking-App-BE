@@ -18,6 +18,10 @@ export interface UserAttributes {
       [dayOfWeek: string]: {
         openingTime: string; 
         closingTime: string;
+        breaks: {
+          startTime: string;
+          endTime: string;
+        }
       };
     };
     ServiceIds:[string];

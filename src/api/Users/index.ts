@@ -52,7 +52,7 @@ UserRouter.post("/login", async (req, res, next) => {
         }
       }
     } catch (err) {
-      console.log(err)
+       console.log(err)
       next(err);
     }
   });
@@ -98,11 +98,11 @@ UserRouter.get("/me", JWTTokenAuth, async (req, res, next) => {
 
 UserRouter.get("/:id",JWTTokenAuth,async(req,res,next)=>{
     try {
-        const user=await UserModel.findByPk(req.params.id)
+        let user=await UserModel.findByPk(req.params.id)
         if(user){
-            res.status(200).send(user)
+          res.send(user)
         }else{
-            createHttpError(404,"User not found")
+          res.send(createHttpError(404,"User Not Found!!!"))
         }
     } catch (error) {
         next(error)

@@ -49,6 +49,8 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
         const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][requestedDate.getDay()];
         const openingTime = business?.businessSchedule[dayOfWeek]?.openingTime as string;
         const closingTime = business?.businessSchedule[dayOfWeek]?.closingTime as string;
+        const breakTimeStart=business?.businessSchedule[dayOfWeek]?.breaks.startTime as string
+        const breakTimeEnd=business?.businessSchedule[dayOfWeek]?.breaks.endTime as string
         const serviceIds = req.body.ServiceIds
         
         if (openingTime === "none") {
@@ -81,41 +83,43 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
 
         req.body.BusinessId = user.UserId;
     
-        const openingTimeOnly=convertTimeToFormattedString(openingTime)
-        const closingTimeOnly=convertTimeToFormattedString(closingTime)
+        // const openingTimeOnly=convertTimeToFormattedString(openingTime)
+        // const closingTimeOnly=convertTimeToFormattedString(closingTime)
 
-        if (  bookingTimeOnly >= openingTimeOnly && endBookingTimeOnly <= closingTimeOnly) {
-            const overlappingBookings = await BookingModel.findAll({
-                where: {
-                    BusinessId: req.params.id,
-                    [sequelize.Op.or]: [
-                        // Check if new booking starts during an existing booking
-                        {
-                            StartTime: { [sequelize.Op.lte]: endBookingTimeOnly }, // New booking starts before or at the same time
-                            EndTime: { [sequelize.Op.gt]: bookingTimeOnly } // New booking ends after existing booking starts
-                        },
-                        // Check if an existing booking starts during the new booking
-                        {
-                            StartTime: { [sequelize.Op.gte]: bookingTimeOnly }, 
-                            EndTime: { [sequelize.Op.lt]: endBookingTimeOnly } 
-                        },
-                    ]
-                }
-            });
-            if (overlappingBookings.length > 0) {
-                console.log(overlappingBookings)
-                return res.status(403).send(createHttpError(403, "Your booking is overlapping with another one! Try another time please!"));
-                
-            }else{
-                const { BookingId } = await BookingModel.create({
-                ...req.body,
-                CustomerId: user?.UserId,   
-                BusinessId: req.params.id, 
-                EndTime:endBookingTimeOnly
-                 })
+        if (  bookingTimeOnly >= openingTime && endBookingTimeOnly <= closingTime) {
+            if(bookingTimeOnly>=breakTimeStart && endBookingTimeOnly<=breakTimeEnd){
+                const overlappingBookings = await BookingModel.findAll({
+                    where: {
+                        BusinessId: req.params.id,
+                        [sequelize.Op.or]: [
+                     
+                            {
+                                StartTime: { [sequelize.Op.lte]: endBookingTimeOnly },
+                                EndTime: { [sequelize.Op.gt]: bookingTimeOnly } 
+                            },
             
-                res.status(201).send({ BookingId });
-  
+                            {
+                                StartTime: { [sequelize.Op.gte]: bookingTimeOnly }, 
+                                EndTime: { [sequelize.Op.lt]: endBookingTimeOnly } 
+                            },
+                        ]
+                    }
+                });
+                if (overlappingBookings.length > 0) {
+                    console.log(overlappingBookings)
+                    return res.status(403).send(createHttpError(403, "Your booking is overlapping with another one! Try another time please!"));
+                    
+                }else{
+                    const { BookingId } = await BookingModel.create({
+                    ...req.body,
+                    CustomerId: user?.UserId,   
+                    BusinessId: req.params.id, 
+                    EndTime:endBookingTimeOnly
+                     })
+                
+                    res.status(201).send({ BookingId });
+      
+                }
             }
         }else{      
             return res.status(403).send(createHttpError(403, "Business is not available at that time of the day!!")); 
