@@ -110,14 +110,24 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
                     return res.status(403).send(createHttpError(403, "Your booking is overlapping with another one! Try another time please!"));
                     
                 }else{
-                    const { BookingId } = await BookingModel.create({
+                    const {BookingId} = await BookingModel.create({
                     ...req.body,
                     CustomerId: user?.UserId,   
                     BusinessId: req.params.id, 
                     EndTime:endBookingTimeOnly
                      })
                 
-                    res.status(201).send({ BookingId });
+                    
+                    const [updatedRowCount, updatedUser] = await UserModel.update(
+                        {
+                          pending: sequelize.literal(`array_prepend('${user}', "pending")`)
+                        },
+                        {
+                          where: { UserId: req.params.id },
+                          returning: true
+                        }
+                      )
+                      res.status(201).send({BookingId});
       
                 }
             }

@@ -25,6 +25,8 @@ export interface UserAttributes {
       };
     };
     ServiceIds:[string];
+    blocked:[string];
+    pending:[string];
   }
 
 

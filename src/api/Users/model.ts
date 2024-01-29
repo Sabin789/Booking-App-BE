@@ -22,7 +22,6 @@ const UserModel= sequelize.define<UserInstance,UserAttributes>("user",{
         allowNull:true
     },
     email: {
-        
         type: DataTypes.STRING(50),
         allowNull: false,
         unique: true,
@@ -71,6 +70,14 @@ const UserModel= sequelize.define<UserInstance,UserAttributes>("user",{
         type: DataTypes.ENUM('Admin', 'Business', 'User'),
         allowNull: false,
         defaultValue: 'User',
+    },
+    blocked:{
+        type: DataTypes.ARRAY(DataTypes.UUID),
+        allowNull: true
+    },
+    pending:{
+        type: DataTypes.ARRAY(DataTypes.UUID),
+        allowNull: true
     }
 },{
     tableName: 'users',
@@ -122,10 +129,9 @@ UserModel.prototype.checkCredentials = async function (email: string, password: 
 
     UserModel.prototype.isBusinessOpen = function (dayOfWeek:string, time:string) {
         if (this.role === "Business" && this.businessSchedule) {
-          const daySchedule = this.businessSchedule[dayOfWeek]; // Assuming the schedule is stored as an object
+          const daySchedule = this.businessSchedule[dayOfWeek]; 
       
           if (daySchedule) {
-            // Check if the provided time falls within the opening hours
             const openingTime = daySchedule.openingTime;
             const closingTime = daySchedule.closingTime;
       
@@ -133,7 +139,7 @@ UserModel.prototype.checkCredentials = async function (email: string, password: 
           }
         }
       
-        return false; // Business is not open on the specified day
+        return false;
       };
 
 
