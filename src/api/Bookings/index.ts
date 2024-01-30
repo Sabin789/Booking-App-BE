@@ -120,7 +120,7 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
                     
                     const [updatedRowCount, updatedUser] = await UserModel.update(
                         {
-                          pending: sequelize.literal(`array_prepend('${user}', "pending")`)
+                          pending: sequelize.literal(`array_prepend('${BookingId}', "pending")`)
                         },
                         {
                           where: { UserId: req.params.id },
@@ -143,6 +143,7 @@ BookingRouter.post("/:id", JWTTokenAuth, async (req, res, next) => {
 
     }
 });
+
 
 
 
@@ -176,6 +177,75 @@ BookingRouter.delete("/:id",JWTTokenAuth,async(req,res,next)=>{
                     }
                 
             }
+        }
+    } catch (error) {
+        next(error)
+    }
+})
+
+BookingRouter.post("/accept/:id",JWTTokenAuth,async(req,res,next)=>{
+    try {
+        const user=await UserModel.findByPk((req as UserRequest).user._id)
+        if(user?.role=="Business"){
+            const Booking=await BookingModel.findByPk(req.params.id)
+            if(Booking?.BusinessId!==(req as UserRequest).user._id){
+                res.status(403).send("You cannot make changes to this booking!!")
+            }else{
+        const [updatedRowCount, updatedUser] = await UserModel.update(
+            {
+              pending: sequelize.literal(`array_remove("pending", '${req.params.id}')`)
+            },
+            {
+              where: { UserId: (req as UserRequest).user._id },
+              returning: true
+            }
+          );
+        
+          if (updatedRowCount > 0) {
+            res.status(200).json({ message: 'User updated successfully', user: updatedUser[0] });
+          } else {
+            res.status(404).json({ message: 'User not found' });
+          }}
+        }else{
+            res.status(403).send("Only a business account can accept appointments!!")
+        }
+    } catch (error) {
+        next(error)
+    }
+})
+
+BookingRouter.delete("/deny/:id",JWTTokenAuth, async(req,res,next)=>{
+    try {
+        const user=await UserModel.findByPk((req as UserRequest).user._id)
+        if(user?.role=="Business"){
+            const Booking=await BookingModel.findByPk(req.params.id)
+            if(Booking?.BusinessId!==(req as UserRequest).user._id){
+                res.status(403).send("You cannot make changes to this booking!!")
+            }else{
+        const [updatedRowCount, updatedUser] = await UserModel.update(
+            {
+              pending: sequelize.literal(`array_remove("pending", '${req.params.id}')`)
+            },
+            {
+              where: { UserId: (req as UserRequest).user._id },
+              returning: true
+            }
+          );
+        
+          if (updatedRowCount > 0) {
+            const DeletedRowCount = await BookingModel.destroy({
+                where: {BusinessId: (req as UserRequest).user._id }
+            })
+                if (DeletedRowCount === 0) {
+                  createHttpError(404,"No booking with that id found")
+                } else {
+                  res.send(`Booking with id ${req.params.id} deleted`);
+                }
+          } else {
+            res.status(404).json({ message: 'User not found' });
+          }}
+        }else{
+            res.status(403).send("Only a business account can accept appointments!!")
         }
     } catch (error) {
         next(error)
