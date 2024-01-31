@@ -73,11 +73,13 @@ const UserModel= sequelize.define<UserInstance,UserAttributes>("user",{
     },
     blocked:{
         type: DataTypes.ARRAY(DataTypes.UUID),
-        allowNull: true
+        allowNull: false,
+        defaultValue:[]
     },
     pending:{
         type: DataTypes.ARRAY(DataTypes.UUID),
-        allowNull: true
+        allowNull: false,
+        defaultValue:[]
     }
 },{
     tableName: 'users',

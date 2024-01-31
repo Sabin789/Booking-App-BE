@@ -181,4 +181,57 @@ UserRouter.get("/search/:q",JWTTokenAuth,async(req,res,next)=>{
   }
 })
 
+UserRouter.post("/block/:id",JWTTokenAuth, async(req,res,next)=>{
+  try {
+    const userId=(req as UserRequest).user._id
+    const user=await UserModel.findByPk(userId)
+    const blockedUser=await UserModel.findByPk(req.params.id)
+    if(!user){
+     res.status(404).send("User Not Found")
+
+    }else{
+      if(!blockedUser){
+        res.status(404).send("User Not Found")
+      }else{
+        if(user.blocked.includes(req.params.id)){
+          const [updatedRowCount, updatedUser] = await UserModel.update(
+            {
+              blocked: sequelize.literal(`array_remove("blocked", '${req.params.id}')`)
+            },
+            {
+              where: { UserId: (req as UserRequest).user._id },
+              returning: true
+            }
+          )
+          if(updatedRowCount!==0){
+            res.status(200).send("User Unblocked Succesfully!!")
+          }else{
+             res.status(404).send("User not found!!")
+          }
+          
+        }else{
+          const [updatedRowCount, updatedUser] = await UserModel.update(
+            {
+              blocked: sequelize.literal(`array_append("blocked", '${req.params.id}')`)
+            },
+            {
+              where: { UserId: (req as UserRequest).user._id },
+              returning: true
+            }
+          )
+          if(updatedRowCount!==0){
+            res.status(200).send("User Blocked Succesfully!!")
+          }else{
+            res.status(404).send("User not found!!")
+          }
+        
+        }
+      }
+
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
 export default UserRouter
