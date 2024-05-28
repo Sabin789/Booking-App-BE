@@ -19,6 +19,7 @@ const corsOptions:CorsOptions = {
         corsNext(createHttpError(400, "This origin is not allowed! ", currentOrigin));
       }
     },
+    credentials: true
   };
 
 
@@ -38,10 +39,7 @@ server.use(GenericErrorHandler)
 
 const startServer = async () => {
     try {
-      // Connect to the database
       await pgConnect()
-  
-      // Start the Express server
       server.listen(port, () => {
         console.log(`Server started on port ${port}`)
       })
@@ -49,7 +47,7 @@ const startServer = async () => {
       console.error("Error starting server:", error)
       process.exit(1)
     }
-  }
+}
 
 
 startServer()

@@ -47,6 +47,19 @@ UserRouter.post("/login", async (req, res, next) => {
           const accessToken = await createAccessToken(payload);
           const refreshToken = await createRefreshToken(payload);
   
+
+          res.cookie('accessToken', accessToken, {
+            httpOnly: true, // This helps prevent XSS attacks
+            secure: process.env.NODE_ENV === 'production', // Set to true if using https
+            sameSite: 'strict', // Helps mitigate CSRF attacks
+          });
+  
+          res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+          });
+
           res.send({ user: authenticatedUser, accessToken, refreshToken });
         }
       }
@@ -152,9 +165,9 @@ UserRouter.delete("/:id",async(req,res,next)=>{
 UserRouter.delete("/me/session",JWTTokenAuth,async(req,res,next)=>{
     try {
         const user=await UserModel.findByPk((req as UserRequest).user._id)
+       
         if(user){
-            user.refreshToken = ""
-            await user.save()
+           
       
             res.send("Refresh token deleted successfully")
         }else{
